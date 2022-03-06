@@ -28,7 +28,7 @@
     let y
     let data;
 		getData = () => {
-			d3.csv("https://file.io/YXUjZlT5LXEV").then(csv =>{
+			d3.csv("./data/project.csv").then(csv =>{
 				data = csv
 				draw2();
 			})
