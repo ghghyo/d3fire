@@ -1,0 +1,163 @@
+<!doctype html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Final Project</title>
+    <h1 style="color:darkorange; text-align: center" >US Wild Fires Split by State and Cause of Fire</h1>
+	<h4 style="color:darkorange; text-align: center">Discover how tolerance for fires has changed over the years and how this tolerance has led to destruction</h4>
+
+	<script src="https://d3js.org/d3.v6.min.js"></script>
+	<script src="https://web.arch.virginia.edu/insightlab/viz/lib/dvlib.v6.js"></script>
+	<script src="https://web.arch.virginia.edu/insightlab/viz/lib/dvlib_layout.v6.js"></script>
+    <script src="https://unpkg.com/d3-simple-slider"></script>
+    <div style="text-align: center" class="container">
+    <div style="text-align: center" class="row align-items-center">
+    <div style="text-align: center">
+		<button type="button" class="button2" onclick="draw1()">See average number of acres burned in each fire</button>
+        <button onclick="draw3()">See number of fires</button>
+        <button onclick="draw5()">See static</button>
+        
+	</div>
+    <div style="text-align: center" class="col-sm-2"><p id="value-time"></p></div>
+    <div style="text-align: center" class="col-sm"><div id="slider-time"></div></div>
+    </div>
+    </div>
+    <script> 
+    
+    var choose = "draw1"
+    let y
+    let data;
+		getData = () => {
+			d3.csv("https://file.io/YXUjZlT5LXEV").then(csv =>{
+				data = csv
+				draw2();
+			})
+		}
+            
+      // Time
+    var dataTime = d3.range(0, 24).map(function(d) {
+    return new Date(1992 + d, 10, 3);
+    });
+
+    var sliderTime = d3
+    .sliderBottom()
+    .min(d3.min(dataTime))
+    .max(d3.max(dataTime))
+    .step(1000 * 60 * 60 * 24 * 365)
+    .width(600)
+    .displayValue(false)
+    .tickFormat(d3.timeFormat('%Y'))
+    .tickValues(dataTime)
+    .default(new Date(1992, 10, 3))
+    
+    .on('onchange', function(){
+      if (choose=="draw1") {
+         draw1();
+      }
+      else {
+         draw3();
+      }
+    })
+
+   
+    var gTime = d3
+    .select('div#slider-time')
+    .append('svg')
+    .attr('width', 700)
+    .attr('height', 100)
+    .append('g')
+    
+    .attr('transform', 'translate(50,50)');
+
+    gTime.call(sliderTime);
+    
+
+    draw2 = () => {
+			// alternate rollup.
+            y=data.filter(d => d["FIRE_YEAR"]==d3.timeFormat('%Y')(sliderTime.value()))
+            var av = d3.mean(y, d => toNum(d["FIRE_SIZE"]))
+            av= d3.format(".1f")(av)
+            var at = d3.count(y, d => toNum(d["FIRE_SIZE"]))
+			rollupData = d3.rollups(y, v => d3.mean(v, d => toNum(d["FIRE_SIZE"])), d => d["STATE"], d => d["STAT_CAUSE_DESCR"]);
+			dataLayout = layoutChildren("powerplants", rollupData);
+			d3.select("#layer1").attr("transform","translate(600 500)");
+			sunburst = dvSunburst("layer1",dataLayout,1000,0.1);
+            document.getElementById("myText").innerHTML = av
+            document.getElementById("myText2").innerHTML = at
+		}
+
+    draw1 =() => {
+        choose="draw1"
+        sunburst.remove()
+        d3.select('#layer1').selectAll("image").remove()
+        draw2()
+    }
+    
+    draw4 = () => {
+			// alternate rollup.
+            y=data.filter(d => d["FIRE_YEAR"]==d3.timeFormat('%Y')(sliderTime.value()))
+            var av = d3.mean(y, d => toNum(d["FIRE_SIZE"]))
+            av= d3.format(".1f")(av)
+            var at = d3.count(y, d => toNum(d["FIRE_SIZE"]))
+			rollupData = d3.rollups(y, v => d3.count(v, d => toNum(d["FIRE_SIZE"])), d => d["STATE"], d => d["STAT_CAUSE_DESCR"]);
+			dataLayout = layoutChildren("powerplants", rollupData);
+			d3.select("#layer1").attr("transform","translate(600 500)");
+			sunburst = dvSunburst("layer1",dataLayout,1000,0.1);
+            document.getElementById("myText").innerHTML = av
+            document.getElementById("myText2").innerHTML = at
+		}
+
+    draw3 =() => {
+        
+        choose="draw3"
+        sunburst.remove()
+        d3.select('#layer1').selectAll("image").remove()
+        draw4()
+        
+    }
+    
+    draw5 =() => {
+        sunburst.remove()
+        var svg = d3.select('#layer1')
+        var myimage = svg.append('image')
+        .attr('xlink:href', 'https://i.ibb.co/jWd0Myr/static.png')
+        .attr("transform","translate(-600 -500)")
+    }
+		
+	</script>
+    
+	<style>
+		body {font-family: "Open Sans", sans-serif; background-color: #000000;}
+		button {text-align: center; color:antiquewhite; background: none; border: 3px solid #B22222; border-radius: 10px; padding: 5px; cursor: pointer;}
+		button:hover {background-color: #aaa;}
+		.burstpath {fill:#2F4F4F; stroke: #ccc}
+		.undefined {fill:none;}
+            
+        .Arson {fill:#000000; background-color:#000000; color: #dddddd;}         /* black */
+        .Miscellaneous {fill:#00ff00; background-color:#00ff00;}                      /* green */
+        .Lightning {fill:#0000ff; background-color:#0000ff; color: #dddddd;}        /* blue */
+        .Campfire {fill:#777700; background-color:#777700;}                          /* brown */
+        .Children {fill:#E8BD0C; background-color:#E8BD0C;}                          /* orange */
+        .Fireworks {fill:#00ffff; background-color:#00ffff;}                      /* cyan */
+        .Missing\/Undefined {fill:#A6A277; background-color:#A6A277;}                   /* brown */
+        .Powerline {fill: #FF66FF; background-color: #FF66FF;}                       /* pink */
+        .Railroad {fill: #8B4513; background-color: #8B4513;} 
+        .Smoking {fill: #BC8F8F; background-color: #BC8F8F;}                   /* gray */
+        .Structure {fill: #aa0000; background-color: #aa0000;} /* yellow */
+        .Debris {fill: #888888; background-color: #888888;}                   /* gray */
+        .Equipment{fill: #F5DEB3; background-color: #F5DEB3;}                 /* gray */
+
+		.node text {font-size: 12px; fill: white; text-anchor: middle}
+	</style>
+</head>
+<body onload="getData()">
+    <pre  style="color:darkorange; text-align: center;  ">Average number of acres burnt during a fire that year: <span id="myText"></span></pre>
+    <pre style="color:darkorange; text-align: center">Total number of fires that year: <span id="myText2"></span></pre>
+
+	<svg width="100%" height="1000" viewBox="0 0 1200 1200";preserveAspectRatio="xMidYMid"; id="base" >
+		<g id="layer1"></g>
+	</svg>
+
+	
+</body>
+</html>
